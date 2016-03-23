@@ -38,7 +38,7 @@ class CollectResource(object):
 
     def on_get(self, req, resp):
 
-        html_file = 'world.html'
+        html_file = 'index.html'
         resp.status = falcon.HTTP_200
         remote_ip = req.env['REMOTE_ADDR']
         match = geolite2.lookup(remote_ip)
@@ -73,16 +73,18 @@ class CollectResource(object):
                 print("Found: %s: %s" % (country, counts.get(country)))
                 aligned_counts.append(counts.get(country))
             else:
-                aligned_counts.append(random.randint(0, 10))
+               #aligned_counts.append(random.randint(0, 10))
+               aligned_counts.append(0)
 
         # lets make a dataframe
         df = pandas.DataFrame({"COUNTRY": countries, "COUNT": aligned_counts})
-        vis = vincent.Map(data=df, geo_data=geo_data, scale=200, projection='cylindricalStereographic',
+        vis = vincent.Map(data=df, geo_data=geo_data, scale=150, projection='cylindricalStereographic',
             data_bind="COUNT", data_key="COUNTRY", map_key={'countries': "id"})
-        #max_value = max(counts) if counts else 1
-        #vis.scales['color'].domain = [0, max_value]
-        vis.to_json("world.json", html_out=True, html_path=html_file)
+        max_value = max(counts.values()) if counts else 1
+        vis.scales['color'].domain = [0, max_value / 2]
+        vis.to_json("world.json")
         vis.marks[0].properties.enter.stroke_opacity = values.ValueRef(value=0.5)
+        
         resp.content_type = "text/html; charset=utf-8"
         with open(html_file) as html:
             resp.body = html.read()
@@ -95,7 +97,7 @@ live = LiveDataResource()
 collect = CollectResource()
 app.add_route('/core', core)
 app.add_route('/world.json', live)
-app.add_route('/world', collect)
+app.add_route('/', collect)
 
 
 

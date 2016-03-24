@@ -9,8 +9,6 @@ import db
 import pycountry
 from geoip import geolite2
 from vincent import values
-from db import RemoteConnection
-
 
 class CoreDataResource(object):
 
@@ -31,11 +29,6 @@ class LiveDataResource(object):
 
 class CollectResource(object):
 
-    def get_matching_country(self, code):
-        # takes an ISO-3666 alpha2 code and return corresponding alpha3 code
-        country = pycountry.countries.get(alpha2=code)        
-        return country.alpha3
-
     def on_get(self, req, resp):
 
         html_file = 'index.html'
@@ -43,29 +36,23 @@ class CollectResource(object):
         remote_ip = req.env['REMOTE_ADDR']
         match = geolite2.lookup(remote_ip)
 
-        # the geo map
-        geo_data = [{
-             'name': 'countries',
-             'url': "http://45.33.70.211/core",
-             'feature': 'world-countries'}]
-
         if match:
-            # normalize the country code
-            country = self.get_matching_country(match.country)
+            # normalize theISO-3666 alpha2 country code -> alpha3
+            country = pycountry.countries.get(alpha2=match.country).alpha3
             # add to db
-            connection_info = RemoteConnection(remote_ip, country, match.continent, match.timezone, str(list(match.subdivisions)))
+            connection_info = db.RemoteConnection(remote_ip, country, match.continent, match.timezone, str(list(match.subdivisions)))
             db.upsert_connection(connection_info)
             counts = db.get_country_counts()
 
         else:
             counts = {}
             print("No match found")
-
          
         # build some data
         with open(os.path.join('data', 'world-countries.topo.json'), 'r') as f:
             data = json.load(f)
         
+        # build a list of visit counts for all the countries ex. [1, 5, 0, 7, ...] 
         countries = [country['id'] for country in data['objects']['world-countries']['geometries']]
         aligned_counts = []
         for country in countries:
@@ -73,18 +60,31 @@ class CollectResource(object):
                 print("Found: %s: %s" % (country, counts.get(country)))
                 aligned_counts.append(counts.get(country))
             else:
-               #aligned_counts.append(random.randint(0, 10))
                aligned_counts.append(0)
 
-        # lets make a dataframe
+        # join the list of countries with the list of counts in a dataframe
         df = pandas.DataFrame({"COUNTRY": countries, "COUNT": aligned_counts})
+
+        # the source geo map
+        geo_data = [{
+             'name': 'countries',
+             'url': "/core",
+             'feature': 'world-countries'}]
+
+
+        # make the live map
         vis = vincent.Map(data=df, geo_data=geo_data, scale=150, projection='cylindricalStereographic',
             data_bind="COUNT", data_key="COUNTRY", map_key={'countries': "id"})
+
+        # alter map properties
         max_value = max(counts.values()) if counts else 1
-        vis.scales['color'].domain = [0, max_value / 2]
-        vis.to_json("world.json")
+        vis.scales['color'].domain = [0, 6]
         vis.marks[0].properties.enter.stroke_opacity = values.ValueRef(value=0.5)
         
+        # export map
+        vis.to_json("world.json")
+
+        # return html
         resp.content_type = "text/html; charset=utf-8"
         with open(html_file) as html:
             resp.body = html.read()

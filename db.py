@@ -78,22 +78,31 @@ def get_country_counts():
     '''
 
     conn = sqlite3.connect(db_file)
-    c = conn.cursor()
- 
-    counts = c.execute("SELECT country, COUNT(*) FROM connections GROUP BY country")
-    result = {}
-    for row in counts:
-        result[row[0]] = row[1]
-    print(result)
-    return result
+    with conn: 
+        counts = conn.execute("SELECT country, COUNT(*) FROM connections GROUP BY country")
+        result = {}
+        for row in counts:
+            result[row[0]] = row[1]
+        print(result)
+        return result
 
 def get_all_connections():
 
     conn = sqlite3.connect(db_file)
-    c = conn.cursor() 
-    for row in c.execute('SELECT * FROM connections'):
-        yield RemoteConnection(row[0], row[1], row[2], row[3], row[4])
+    with conn:    
+        for row in conn.execute('SELECT * FROM connections'):
+            yield RemoteConnection(row[0], row[1], row[2], row[3], row[4])
     
+
+def count_connections():
+    conn = sqlite3.connect(db_file)
+    with conn:
+        return conn.execute('SELECT COUNT(*) FROM connections').fetchone()
+
+def count_countries():
+    conn = sqlite3.connect(db_file)
+    with conn:
+        return conn.execute('SELECT COUNT (DISTINCT country) FROM connections').fetchone()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

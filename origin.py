@@ -6,9 +6,11 @@ import json
 import random
 import pandas
 import db
+import jinja2
 import pycountry
 from geoip import geolite2
 from vincent import values
+from jinja2 import Environment, PackageLoader
 
 class CoreDataResource(object):
 
@@ -71,7 +73,6 @@ class CollectResource(object):
              'url': "/core",
              'feature': 'world-countries'}]
 
-
         # make the live map
         vis = vincent.Map(data=df, geo_data=geo_data, scale=150, projection='cylindricalStereographic',
             data_bind="COUNT", data_key="COUNTRY", map_key={'countries': "id"})
@@ -82,13 +83,21 @@ class CollectResource(object):
         vis.marks[0].properties.enter.stroke_opacity = values.ValueRef(value=0.5)
         
         # export map
+        vis_file = remote_ip
         vis.to_json("world.json")
 
         # return html
         resp.content_type = "text/html; charset=utf-8"
-        with open(html_file) as html:
-            resp.body = html.read()
+        #with open(html_file) as html:
+        #    resp.body = html.read()
+        visits = db.count_connections()[0]
+        countries = db.count_countries()[0]
+        
+        resp.body = env.get_template(html_file).render(total_visits=visits, unique_countries=countries)
 
+
+# setup
+env = Environment(loader=PackageLoader('origin', 'templates'))
 
 # run the app
 app = falcon.API()

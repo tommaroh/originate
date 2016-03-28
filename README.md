@@ -1,6 +1,5 @@
 # originate
 Collects country of origin for all visitors and displays results on a world map.
-Implemented in pure python.
 
 * [Falcon](http://falconframework.org/) for routing.
 * [gunicorn](http://gunicorn.org/) for running the server.

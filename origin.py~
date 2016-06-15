@@ -29,7 +29,7 @@ class LiveDataResource(object):
     # backend REST call that serves the rendered data as json
     def on_get(self, req, resp):
 
-        with open(os.path.join('data', LIVE_DATA)) as data:
+        with open(LIVE_DATA) as data:
             resp.body = data.read()
 
 class CoreResource(object):
@@ -67,9 +67,7 @@ class CoreResource(object):
         # grab the topo data
         with open(os.path.join('data', TOPO_DATA), 'r') as f:
             topo_data = json.load(f)
-            return topo_data
-        print("Could not find topo data")
-        return {}
+        return topo_data
 
     def get_country_counts(self):
         """

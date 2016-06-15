@@ -9,3 +9,5 @@ Collects country of origin for all visitors and displays results on a world map.
 * [SQLite](https://docs.python.org/2/library/sqlite3.html) for database to store vistor IPs.
 
 ![alt tag](https://raw.github.com/keypusher/originate/master/data/world_example.png)
+
+Many thanks to wrobstory for his excellent blog post on using vincent @ http://wrobstory.github.io/2013/10/mapping-data-python.html

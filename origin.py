@@ -29,7 +29,7 @@ class LiveDataResource(object):
     # backend REST call that serves the rendered data as json
     def on_get(self, req, resp):
 
-        with open(LIVE_DATA) as data:
+        with open(os.path.join('data', LIVE_DATA)) as data:
             resp.body = data.read()
 
 class CoreResource(object):
